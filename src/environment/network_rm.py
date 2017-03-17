@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.random import randint, binomial, exponential
+from numpy.random import rand, exponential
 
 class network_rm(object):
     """
@@ -26,7 +26,7 @@ class network_rm(object):
         # rewards
         self.last_reward = 0
         self.total_reward = 0
-        self.prev_arrival = None
+        self.prev_arrival = 0
         # need to implement these
         self.observation_shape = self.state.shape
         self.terminate = False
@@ -40,12 +40,18 @@ class network_rm(object):
         return self.state
 
     def transition(self):
-        self.prev_arrival = randint(self.demand_num)
+        #generating a random number proportionally to indices in demand_arrivals
+        r = rand()
+        i = 0
+        while r > 0:
+            r -= self.demand_arrivals[i]
+            i+=1
+        self.prev_arrival = i # the first element in the array is not really an arrival. otw would be i-1
         self.state[self.inventory_size:] = self.demand_types[self.prev_arrival]
 
     def perform_action(self, accept):
         self.last_reward = 0
-        if accept:
+        if accept and not self.terminate:
             if all(self.state[0:(self.inventory_size)] >= self.state[(self.inventory_size):]):
                 self.state[0:(self.inventory_size)] -= self.state[(self.inventory_size):]
                 self.last_reward = self.demand_values[self.prev_arrival]
@@ -55,3 +61,8 @@ class network_rm(object):
         if self.state[self.inventory_size-1] <= 0:
             self.terminate = True
             #need to make sure that we backprop the result of being in termination state
+
+    def print_(self):
+        print("State:")
+        print(self.state)
+        print("Total reward: {}".format(self.total_reward))
